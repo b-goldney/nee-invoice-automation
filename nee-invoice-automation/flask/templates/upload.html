@@ -1,0 +1,357 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Invoice Generator - Upload CSV</title>
+    <style>
+      body {
+        font-family:
+          "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .header h1 {
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        color: #666;
+        font-size: 16px;
+      }
+
+      .upload-area {
+        border: 2px dashed #ddd;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 30px;
+        transition: border-color 0.3s ease;
+      }
+
+      .upload-area:hover {
+        border-color: #007bff;
+      }
+
+      .upload-area.dragover {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+      }
+
+      .file-input {
+        margin: 20px 0;
+      }
+
+      .file-input input[type="file"] {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        width: 100%;
+        max-width: 300px;
+      }
+
+      .upload-btn {
+        background-color: #007bff;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 10px;
+      }
+
+      .upload-btn:hover {
+        background-color: #0056b3;
+      }
+
+      .upload-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      .requirements {
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 20px;
+        margin-top: 30px;
+      }
+
+      .requirements h3 {
+        margin-top: 0;
+        color: #333;
+      }
+
+      .requirements ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+
+      .requirements li {
+        margin: 5px 0;
+        color: #666;
+      }
+
+      .alert {
+        padding: 12px 20px;
+        margin: 20px 0;
+        border-radius: 5px;
+        font-weight: 500;
+      }
+
+      .alert-danger {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+
+      .alert-success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 20px 0;
+        display: none;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background-color: #007bff;
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        margin: 20px 0;
+      }
+
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #007bff;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-right: 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Invoice Generator</h1>
+        <p>Upload your CSV file to automatically generate invoices</p>
+      </div>
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages() %} {% if messages %} {% for
+      message in messages %}
+      <div class="alert alert-danger">{{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <!-- Upload Form -->
+      <form
+        id="uploadForm"
+        method="POST"
+        enctype="multipart/form-data"
+        action="{{ url_for('upload_file') }}"
+      >
+        <div class="upload-area" id="uploadArea">
+          <h3>📄 Choose or Drop Your CSV File</h3>
+          <p>Click to select a file or drag and drop it here</p>
+
+          <div class="file-input">
+            <input
+              type="file"
+              id="csvFile"
+              name="file"
+              accept=".csv"
+              required
+            />
+          </div>
+
+          <button type="submit" class="upload-btn" id="uploadBtn">
+            Generate Invoices
+          </button>
+        </div>
+      </form>
+
+      <!-- Loading indicator -->
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <span>Processing your file and generating invoices...</span>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <!-- Requirements -->
+      <div class="requirements">
+        <h3>📋 CSV File Requirements</h3>
+        <p>Your CSV file must contain the following columns:</p>
+        <ul>
+          <li>
+            <strong>Split Order Number</strong> - Purchase order reference
+          </li>
+          <li><strong>Invoice #</strong> - Unique invoice identifier</li>
+          <li>
+            <strong>Order Item Quantity (# of units ordered)</strong> - Quantity
+            of items
+          </li>
+          <li><strong>SKU ID (Vendor SKU ID)</strong> - Product SKU</li>
+          <li><strong>Gross Placed: Total Wholesale $</strong> - Unit price</li>
+        </ul>
+        <p>
+          <strong>Note:</strong> Column names must match exactly
+          (case-sensitive)
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const uploadArea = document.getElementById("uploadArea");
+      const fileInput = document.getElementById("csvFile");
+      const uploadForm = document.getElementById("uploadForm");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const loading = document.getElementById("loading");
+      const progressBar = document.getElementById("progressBar");
+
+      // Drag and drop functionality
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.classList.add("dragover");
+      });
+
+      uploadArea.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+      });
+
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          fileInput.files = files;
+          updateFileName();
+        }
+      });
+
+      // Click to upload
+      uploadArea.addEventListener("click", (e) => {
+        if (e.target !== fileInput) {
+          fileInput.click();
+        }
+      });
+
+      // Update filename display
+      fileInput.addEventListener("change", updateFileName);
+
+      function updateFileName() {
+        const fileName = fileInput.files[0]?.name;
+        if (fileName) {
+          const fileInfo = document.createElement("p");
+          fileInfo.style.marginTop = "10px";
+          fileInfo.style.color = "#007bff";
+          fileInfo.style.fontWeight = "bold";
+          fileInfo.textContent = `Selected: ${fileName}`;
+
+          // Remove existing file info
+          const existingInfo = uploadArea.querySelector(".file-info");
+          if (existingInfo) {
+            existingInfo.remove();
+          }
+
+          fileInfo.className = "file-info";
+          uploadArea.appendChild(fileInfo);
+        }
+      }
+
+      // Form submission with loading state
+      uploadForm.addEventListener("submit", (e) => {
+        if (!fileInput.files[0]) {
+          e.preventDefault();
+          alert("Please select a CSV file first");
+          return;
+        }
+
+        // Show loading state
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = "Processing...";
+        loading.style.display = "block";
+        progressBar.style.display = "block";
+
+        // Simulate progress (since we can't track actual progress easily)
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+          progress += 5;
+          document.getElementById("progressFill").style.width = progress + "%";
+
+          if (progress >= 90) {
+            clearInterval(progressInterval);
+          }
+        }, 200);
+      });
+
+      // File validation
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const fileExtension = file.name.split(".").pop().toLowerCase();
+          if (fileExtension !== "csv") {
+            alert("Please select a CSV file");
+            fileInput.value = "";
+            return;
+          }
+
+          // Check file size (16MB limit)
+          const maxSize = 16 * 1024 * 1024; // 16MB
+          if (file.size > maxSize) {
+            alert("File size must be less than 16MB");
+            fileInput.value = "";
+            return;
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
