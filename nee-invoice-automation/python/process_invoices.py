@@ -138,8 +138,10 @@ def process_invoices(csv_path, output_dir, logo_path=None):
 
 
 def main():
-    if len(sys.argv) != 3:
-        print("Usage: python process_invoices.py <csv_path> <output_dir>")
+    if not (3 <= len(sys.argv) <= 4):
+        print(
+            "Usage: python process_invoices.py <csv_path> <output_dir> [optional_logo_path]"
+        )
         sys.exit(1)
 
     csv_path = sys.argv[1]
