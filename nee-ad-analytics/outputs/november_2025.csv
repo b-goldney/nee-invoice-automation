@@ -1,0 +1,7 @@
+start_date,portfolio,budget_impressions,clicks,spend_usd,orders,sales_usd,acos,category,action
+9/5/25,Name Change Kit,,37,26.65,2,178.0,14.97,good acos,increase bid by x%
+9/5/25,Name Change Kit,,9,3.31,0,0.0,0.0,,
+9/5/25,Name Change Kit,,13,13.2,0,0.0,0.0,,
+9/5/25,Name Change Kit,,484,880.79,32,2848.0,30.930000000000003,,
+9/5/25,Name Change Kit,,225,416.96,11,979.0,42.59,bleeder >= 1 order,reduce bid by 0.59%
+8/28/25,Name Change Kit,,196,96.71,2,178.0,54.33,bleeder >= 1 order,reduce bid by 12.33%
