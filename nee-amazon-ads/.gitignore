@@ -1,0 +1,3 @@
+# OAuth + API secrets — never commit
+*.token
+.env

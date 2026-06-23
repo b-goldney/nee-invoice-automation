@@ -1,0 +1,5 @@
+# OAuth + API secrets — never commit
+client_secret.json
+google-ads.yaml
+*.token
+.env
